@@ -63,7 +63,10 @@ func handleRequest(conn net.Conn) {
 		case "write":
 			writeFile(arguments[1], conn)
 		case "read":
-			readFile(arguments[1], conn)
+			filename := sessionPath + "/" + arguments[1]
+			println(filename)
+			readFile(filename, conn)
+			println("returned from func")
 		case "touch":
 			makeFile(arguments[1])
 		case "quit":

@@ -10,6 +10,7 @@ import (
 const (
 	RHOST = "127.0.0.1"
 	RPORT = "8080"
+	PASS  = "securepass123"
 )
 
 func startClient() {
@@ -70,12 +71,27 @@ func loopConnection(conn net.Conn, reader *bufio.Reader) {
 			if err != nil {
 				println(err)
 			}
-			interpret(msg)
+			println(interpret(msg, arguments[1]))
+		case "write":
+			message, err := reader.ReadString('\n')
+			if err != nil {
+				println(err)
+			}
+			conn.Write(encryptText(message, arguments[1]))
+			conn.Write([]byte("\n"))
 		}
 
 	}
 }
 
-func interpret(data string) {
+//decrypt received data
+func interpret(data string, fileid string) string {
+	text := decrypter(fileid, PASS, []byte(data))
+	return string(text)
+}
 
+//encrypt data before sending
+func encryptText(data string, fileid string) []byte {
+	byteData := encrypter(fileid, PASS, []byte(data))
+	return byteData
 }

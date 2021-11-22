@@ -44,6 +44,10 @@ func initializeFS() {
 	if err != nil {
 		println("could not open file: ", err)
 	}
+	_, err = f.Write([]byte("0"))
+	if err != nil {
+		println(err)
+	}
 	f.Close()
 
 	treeEval("0/1/1/file")
@@ -65,8 +69,13 @@ func writeFile(filename string, conn net.Conn) {
 		f, _ = rootFS.OpenFile(filename, os.O_RDWR, 0)
 	}
 	println(f)
+	println("waiting for data")
 	data := readInput(conn)
-	f.Write([]byte(data))
+	println("data received: ", data)
+	_, err = f.Write([]byte(data))
+	if err != nil {
+		println(err)
+	}
 }
 
 func makeFile(filename string) error {
@@ -81,10 +90,14 @@ func makeFile(filename string) error {
 func readFile(filename string, conn net.Conn) error {
 	f, err := rootFS.OpenFile(filename, os.O_RDONLY, 0)
 	if err != nil {
+		println(err)
+		conn.Write([]byte("error\n"))
 		return err
 	}
+	println("checkpoint 1")
 	buffer := make([]byte, 1024)
 	f.Read(buffer)
 	conn.Write(buffer)
+	conn.Write([]byte("\n"))
 	return nil
 }

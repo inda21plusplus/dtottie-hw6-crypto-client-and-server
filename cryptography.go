@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/md5"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
 	"io"
 	"os"
@@ -12,7 +12,7 @@ import (
 
 func newHash(str string) string {
 
-	hashMachine := sha256.New()
+	hashMachine := md5.New()
 	hashMachine.Write([]byte(str))
 	hash_val := hex.EncodeToString(hashMachine.Sum(nil))
 	return hash_val
@@ -20,12 +20,19 @@ func newHash(str string) string {
 
 func encrypter(fileid string, passphrase string, data []byte) []byte {
 	key := fileid + passphrase
-	newCipher, err := aes.NewCipher([]byte(newHash(key)))
+	keyhash := newHash(key)
+	println("hash is: ", keyhash)
+	newCipher, err := aes.NewCipher([]byte(keyhash))
+	println(newCipher)
 	if err != nil {
 		println("error when creating cipher", err)
 		os.Exit(1)
 	}
 	counter, err := cipher.NewGCM(newCipher)
+	if err != nil {
+		println("error when creating GCM", err)
+		os.Exit(1)
+	}
 	nonce := make([]byte, counter.NonceSize())
 	io.ReadFull(rand.Reader, nonce)
 	text := counter.Seal(nonce, nonce, data, nil)
@@ -33,7 +40,7 @@ func encrypter(fileid string, passphrase string, data []byte) []byte {
 
 }
 
-func decrypter(data []byte, fileid string, passphrase string) []byte {
+func decrypter(fileid string, passphrase string, data []byte) []byte {
 	decryptKey := []byte(newHash(fileid + passphrase))
 	newCipher, _ := aes.NewCipher(decryptKey)
 	counter, _ := cipher.NewGCM(newCipher)
